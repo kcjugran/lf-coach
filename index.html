@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1F3A2E">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self'; connect-src 'self' https://api.github.com https://*.trycloudflare.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>LF Coach</title>
+  <link rel="icon" href="favicon.ico">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header class="top">
+    <p class="eyebrow">Living Foundations</p>
+    <div class="topline">
+      <h1>Clients</h1>
+      <span id="count" class="count"></span>
+    </div>
+    <p id="sub" class="sub"></p>
+  </header>
+
+  <p id="banner" class="banner" role="status" hidden></p>
+
+  <main id="main">
+    <div id="groups"></div>
+
+    <section id="recent-wrap" class="recent" hidden>
+      <h2 class="group-title">Just logged</h2>
+      <ul id="recent" class="recent-list"></ul>
+    </section>
+
+    <button id="logout" class="logout" type="button" hidden>Log out</button>
+  </main>
+
+  <!-- Log a payment -->
+  <div id="pay-back" class="backdrop" hidden></div>
+  <form id="pay" class="sheet" autocomplete="off" hidden>
+    <h2 id="pay-name" class="sheet-title"></h2>
+    <p id="pay-sub" class="sub"></p>
+    <div class="amount">
+      <span id="pay-sym" class="sym"></span>
+      <input id="pay-amount" type="number" inputmode="numeric" min="1" step="1"
+             enterkeyhint="done" aria-label="Amount received">
+    </div>
+    <div id="pay-chips" class="chips"></div>
+    <p id="pay-math" class="math"></p>
+    <div class="sheet-actions">
+      <button id="pay-go" type="submit" class="primary">Log payment</button>
+      <button id="pay-cancel" type="button" class="quiet">Cancel</button>
+    </div>
+  </form>
+
+  <!-- Login -->
+  <form id="gate" class="gate" hidden>
+    <p class="eyebrow">Living Foundations</p>
+    <h2 id="gate-title" class="gate-title">Log in</h2>
+    <label for="g-user">ID</label>
+    <input id="g-user" name="username" autocomplete="username" autocapitalize="off"
+           autocorrect="off" spellcheck="false" maxlength="64" required>
+    <label for="g-pass">Password</label>
+    <input id="g-pass" name="password" type="password" autocomplete="current-password"
+           maxlength="200" required>
+    <div id="setup-only" hidden>
+      <label for="g-key">Setup key</label>
+      <input id="g-key" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+      <p class="hint">On the PC: coach-phone\data\phone_key.txt. Needed once, to create the login.</p>
+    </div>
+    <p id="gate-msg" class="gate-msg" role="alert"></p>
+    <button id="gate-btn" type="submit" class="primary">Log in</button>
+    <button id="gate-switch" class="linkish" type="button">First time? Create login</button>
+  </form>
+
+  <template id="card-tpl">
+    <li class="card">
+      <div class="card-head">
+        <h3 class="name"></h3>
+        <span class="chip"></span>
+      </div>
+      <p class="terms"></p>
+      <p class="figure"><b class="big"></b><span class="unit"></span></p>
+      <div class="acts">
+        <button class="act class" type="button">+ Class</button>
+        <button class="act pay" type="button">+ Payment</button>
+      </div>
+    </li>
+  </template>
+
+  <template id="recent-tpl">
+    <li class="rrow">
+      <span class="rtext"><b class="rwho"></b><span class="rwhat"></span></span>
+      <button class="undo" type="button">Undo</button>
+    </li>
+  </template>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
