@@ -15,23 +15,13 @@
 <body>
   <header class="top">
     <p class="eyebrow">Living Foundations</p>
-    <div class="topline">
-      <h1>Clients</h1>
-      <span id="count" class="count"></span>
-    </div>
-    <p id="sub" class="sub"></p>
+    <h1>Clients</h1>
   </header>
 
   <p id="banner" class="banner" role="status" hidden></p>
 
   <main id="main">
-    <div id="groups"></div>
-
-    <section id="recent-wrap" class="recent" hidden>
-      <h2 class="group-title">Just logged</h2>
-      <ul id="recent" class="recent-list"></ul>
-    </section>
-
+    <ul id="list" class="list"></ul>
     <button id="logout" class="logout" type="button" hidden>Log out</button>
   </main>
 
@@ -77,21 +67,13 @@
     <li class="card">
       <div class="card-head">
         <h3 class="name"></h3>
-        <span class="chip"></span>
+        <span class="figure"><b class="big"></b><span class="unit"></span></span>
       </div>
-      <p class="terms"></p>
-      <p class="figure"><b class="big"></b><span class="unit"></span></p>
       <div class="acts">
         <button class="act class" type="button">+ Class</button>
         <button class="act pay" type="button">+ Payment</button>
       </div>
-    </li>
-  </template>
-
-  <template id="recent-tpl">
-    <li class="rrow">
-      <span class="rtext"><b class="rwho"></b><span class="rwhat"></span></span>
-      <button class="undo" type="button">Undo</button>
+      <p class="note" hidden><span class="ntext"></span><button class="undo" type="button">Undo</button></p>
     </li>
   </template>
 

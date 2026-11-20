@@ -175,124 +175,48 @@ const money = (c, n) => (c.currency === 'INR' ? '₹' : '$') + Math.round(n).toL
 const shortDate = iso => { const d = new Date(iso + 'T00:00:00'); return isNaN(d) ? iso : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); };
 
 // ---- rendering --------------------------------------------------------------------
-const GROUPS = [
-  ['Needs a payment', c => isPayDue(c)],
-  ['Active', c => !isPayDue(c) && isSessions(c) && c.status === 'Active'],
-  ['Paused & onboarding', c => !isPayDue(c) && isSessions(c) && c.status !== 'Active'],
-  ['Diet plans', c => !isSessions(c)],
-];
-
-function statusChip(c) {
-  if (isPayDue(c)) return ['due', isMonthly(c) ? 'month due' : 'unpaid'];
-  if (c.status === 'Active') return ['ok', 'active'];
-  if (c.status === 'Paused') return ['hold', 'paused'];
-  return ['', String(c.status || '').toLowerCase()];
-}
+// One list of the people he logs for, always in the same order so the buttons don't move.
+// A client on a diet plan has no classes and no per-class rate, so there is nothing to tap
+// for them: they stay on the PC.
+const NOTE_MS = 10 * 60 * 1000;   // how long "...logged" and its Undo stay under a card
 
 function figureOf(c) {
-  if (!isSessions(c)) return null;
-  if (isMonthly(c)) {
-    const n = monthDone(c);
-    return [String(n), n === 1 ? 'class this month' : 'classes this month'];
-  }
+  if (isMonthly(c)) return [String(monthDone(c)), 'this month'];
   const left = remaining(c);
-  if (left < 0) return [String(-left), -left === 1 ? 'class unpaid' : 'classes unpaid'];
-  return [String(left), left === 1 ? 'class left' : 'classes left'];
+  return left < 0 ? [String(-left), 'unpaid'] : [String(left), 'left'];
 }
 
-function termsOf(c) {
-  if (!isSessions(c)) return `Diet plan · ${c.tier || ''}`.trim();
-  const rate = +c.rate || 0;
-  const per = isMonthly(c) ? '/month' : '/class';
-  const bits = [rate ? money(c, rate) + per : 'no rate set'];
-  if (isMonthly(c)) {
-    const due = monthCycle(c);
-    const d = daysTo(c.nextPayDue);
-    bits.push(due === 'open' ? 'no payment date' : d != null && d < 0
-      ? `overdue since ${shortDate(c.nextPayDue)}` : `next due ${shortDate(due)}`);
-  } else {
-    bits.push(`${c.classesDone || 0} done · ${c.classesPaid || 0} paid`);
-  }
-  return bits.join(' · ');
+/** The last thing logged for this client, while it is still fresh enough to undo in one tap. */
+function lastFor(id) {
+  const ev = ((data && data.events) || []).find(e => e.client === id && !e.undone);
+  return ev && Date.now() - ev.at < NOTE_MS ? ev : null;
 }
 
 function card(c) {
   const li = el('card-tpl').content.firstElementChild.cloneNode(true);
-  const [chipClass, chipText] = statusChip(c);
   li.classList.toggle('is-due', isPayDue(c));
   li.querySelector('.name').textContent = c.name || c.id;
-  const chip = li.querySelector('.chip');
-  chip.textContent = chipText;
-  if (chipClass) chip.classList.add(chipClass);
-  li.querySelector('.terms').textContent = termsOf(c);
-  const fig = figureOf(c);
-  if (fig) {
-    li.querySelector('.big').textContent = fig[0];
-    li.querySelector('.unit').textContent = fig[1];
-  } else {
-    li.classList.add('flat');
-  }
-  if (isSessions(c)) {
-    li.querySelector('.act.class').addEventListener('click', () => logClass(c.id));
-    li.querySelector('.act.pay').addEventListener('click', () => openPay(c.id));
-  } else {
-    li.querySelector('.acts').remove();
+  const [big, unit] = figureOf(c);
+  li.querySelector('.big').textContent = big;
+  li.querySelector('.unit').textContent = unit;
+  li.querySelector('.act.class').addEventListener('click', () => logClass(c.id));
+  li.querySelector('.act.pay').addEventListener('click', () => openPay(c.id));
+  const ev = lastFor(c.id);
+  if (ev) {
+    const note = li.querySelector('.note');
+    note.hidden = false;
+    note.querySelector('.ntext').textContent = ev.text || '';
+    note.querySelector('.undo').addEventListener('click', () => undo(ev));
   }
   return li;
 }
 
 function render() {
-  const clients = (data && data.clients) || [];
-  const due = clients.filter(isPayDue).length;
-  const active = clients.filter(c => c.status === 'Active').length;
-  el('count').textContent = clients.length ? `${active} active · ${clients.length} total` : '';
-  el('sub').textContent = !clients.length ? '' : due
-    ? `${due} ${due === 1 ? 'payment' : 'payments'} to collect` : 'Everyone is paid up';
-
-  const host = el('groups');
-  host.replaceChildren();
-  if (!clients.length) {
-    const p = document.createElement('p');
-    p.className = 'empty';
-    p.textContent = token ? 'No clients yet.' : '';
-    host.append(p);
-  }
-  for (const [title, test] of GROUPS) {
-    const list = clients.filter(test).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    if (!list.length) continue;
-    const section = document.createElement('section');
-    section.className = 'group';
-    const h = document.createElement('h2');
-    h.className = 'group-title';
-    h.textContent = title;
-    const n = document.createElement('span');
-    n.className = 'n';
-    n.textContent = `  ${list.length}`;
-    h.append(n);
-    const ul = document.createElement('ul');
-    ul.className = 'list';
-    for (const c of list) ul.append(card(c));
-    section.append(h, ul);
-    host.append(section);
-  }
-  renderRecent();
-}
-
-function renderRecent() {
-  const events = ((data && data.events) || []).slice(0, 6);
-  el('recent-wrap').hidden = !events.length;
-  const ul = el('recent');
+  const clients = ((data && data.clients) || []).filter(isSessions)
+    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  const ul = el('list');
   ul.replaceChildren();
-  for (const ev of events) {
-    const li = el('recent-tpl').content.firstElementChild.cloneNode(true);
-    li.classList.toggle('undone', !!ev.undone);
-    li.querySelector('.rwho').textContent = ev.clientName || ev.client;
-    li.querySelector('.rwhat').textContent = ev.text || '';
-    const btn = li.querySelector('.undo');
-    if (ev.undone) btn.remove();
-    else btn.addEventListener('click', () => undo(ev));
-    ul.append(li);
-  }
+  for (const c of clients) ul.append(card(c));
 }
 
 // ---- actions ----------------------------------------------------------------------
